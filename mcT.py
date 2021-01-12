@@ -44,29 +44,6 @@ connectionR = db.Connection(host=HOST, port=PORT,user=USER, passwd=PASSWORD, db=
 cR = connectionR.cursor()
 cL =connectionL.cursor()
 
-#c.execute("SELECT * from temSensor")
-#c.execute("SELECT * FROM temSensor ORDER BY id DESC LIMIT 1")
-#result = c.fetchall()
-#for item in result:
-#    print (item)
-
-#except Exception as e:
-#    print (e)
-#finally:
-#    connection.close()
-
-
-#import paramiko
-#from paramiko import SSHClient
-
-
-#conn = sqlite3.connect('FlowSensors.db')
-#c = conn.cursor()
-
-#date=time.strftime("%Y-%m-%d ")
-#t=time.strftime("%H:%M:%S")
-
-# Create the I2C bus
 i2c = busio.I2C(board.SCL, board.SDA)
 
 # Create the ADC object using the I2C bus
@@ -74,50 +51,13 @@ ads = ADS.ADS1115(i2c)
 
 ads.gain = 1
 
-# Create single-ended input on channel 0
-#chan = AnalogIn(ads, ADS.P0, ADS.P1)
-#chan1 = AnalogIn(ads, ADS.P0)
-#chan2 = AnalogIn(ads, ADS.P1)
-
-#chan1Vol = chan1.voltage
-#chan1curr = chan1Vol/159.42
-
-#chan2Vol = chan2.voltage
-#chan2curr=chan2Vol/159.65
-#flow1 = ((chan1Vol/159.42)*1000 -4)/16*2000
-#flow2 = ((chan2Vol/159.65)*1000 -4)/16*4000
-
-#print (chan.value)
-#print (chan.voltage)
-#Create differential input between channel 0 and 1
-#chan = AnalogIn(ads, ADS.P0, ADS.P1)
-#print (chan.value, chan.voltage)
-#print("{:>5}\t{:>5}".format('raw', 'v'))
-
-
-#c.execute('DROP TABLE IF EXISTS  flowReadings;')
-#print ('table deleted')
-
-#c.execute('CREATE TABLE flowReadings(id INTEGER PRIMARY KEY AUTOINCREMENT, flowHp NUMERIC, \
-#flowLoad NUMERIC, Date DATE,Time TIME);')
-#connection.commit()
-
 
 cL.execute('DROP TABLE IF EXISTS flowReadings;')
 print ('table deleted')
 
 
-#cL.execute('CREATE TABLE sensorsAll(id INT AUTO_INCREMENT PRIMARY KEY, ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP, Temp1d4 FLOAT, Temp2d5 FLOAT, Temp3d6 FLOAT, \
-#Temp4d13 FLOAT,  Temp5d19 FLOAT, Temp6d26 FLOAT, Temp7d21 FLOAT,Temp8d20 FLOAT,Temp9d16 FLOAT, \
-#Temp10d12 FLOAT,Temp11d1 FLOAT,Temp12d7 FLOAT, Temp13d8 FLOAT,Temp14d24 FLOAT,\
-#Temp15d23 FLOAT, Temp16d18 FLOAT,Temp17d15 FLOAT, Temp18d14 FLOAT,Temp19d2 FLOAT);')
-
 cL.execute('CREATE TABLE flowReadings(id INT AUTO_INCREMENT PRIMARY KEY, ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP, flowHP FLOAT, flowLoad FLOAT);')
 
-
-#df = pd.DataFrame(columns=[i for i in range (0, 22)])
-#df = pd.DataFrame()
-#print (df)
 
 
 lol=[[], [], []]
@@ -132,19 +72,7 @@ def flatten(l_of_l):
 def mct(Lol):
     mHP = Lol[2]
     T = flatten(Lol)
-    #print ('value of Tem:',T)
     mL = Lol[1]
-    #print (type(T))
-    #print (T)
-    #for i in T:
-    #    for j in i:
-    #      print (type(j))
-    #l_T=[list(i) for i in j for j  in T]
-    #mCT = sum ([a*b for a, b in zip(mHP, deltaT)])
-    #mCT = sum([a*(b[-1][4]-b[-1][3]) for a, b in zip(mHP, x) for x in T])
-    #for inT in T:
-    #  mCT = [a*(b[4]-b[3]) for a, b in zip(mHP, inT)]
-    #Cp = [4.253264761904763 -0.00470305*x[2] for x in T ]
     p_LperH = [999.8473664794213 + 6.29265190e-02*x[2] - 8.42930922e-03*x[2]**2 + 6.77190849e-05*x[2]**3 \
  - 4.40840180e-07*x[2]**4 + 1.29302849e-09*x[2]**5 for x in T  ]
 
@@ -152,8 +80,8 @@ def mct(Lol):
     mF_kgPerS =[ x*2.7777e-07*y for x, y in zip(p_LperH, mHP)]
     cP_kjPerkgK = [4.253264761904763 - 0.00470305*b[2] for b in T]
     #mCT1 = sum([(4.253264761904763 - 0.00470305*b[2])*a*(b[2]-b[3]) for a, b in zip(mHP, T)])
-    mCT_kW = [(4.253264761904763 - 0.00470305*b[2])*a*(b[2]-b[3]) for a, b in zip(mHP, T)]
-    mCT2_kWh = sum([m*c*(dt[2]-dt[3])for m, c, dt in zip(mF_kgPerS,  cP_kjPerkgK, T)])
+    mCT_kW = [(4.253264761904763 - 0.00470305*b[2])*a*(b[3]-b[4]) for a, b in zip(mHP, T)]
+    mCT2_kWh = sum([m*c*(dt[3]-dt[4])*0.0013888889 for m, c, dt in zip(mF_kgPerS,  cP_kjPerkgK, T)])
     #print (T[-1], mHP,'mCpDeltaT =', mCT)
     #print ('mCT is:',mCT)
     #print ('mF', mF_kgPerS, mHP[-1])
@@ -190,40 +118,23 @@ while True:
     #c.execute("SELECT * from temSensor")
     cR.execute("SELECT * FROM temSensor ORDER BY id DESC LIMIT 1")
     result = cR.fetchall()
-    #result = [_[0:] for _ in for _ in  cR.fetchall()]
-    #for i in result:
-    #  print ('type of inner list in result is:',type(i), i)
-    #  Id = result[0]
-    #  print ('ID is :',Id)
-    #print (type(result))
-    #print ('whoel list is :',result)
-    #lol[0].append(result)
     id = result[0][0]
-    #print (lol[0])
-    #print (id, lol[0][-1][0][0])
-    #lol[0].append(result)
-    #lol[1].append(chan1.value)
-    #lol[2].append(chan2.value)
     flowRateLoad.append(flow1)
-    #print ('flow rate Load is',flowRateLoad)
-    #print ('flow rate is',flowRateLoad)
+
     if lol[0] ==[] or id < lol[0][-1][0][0] :
         lol[0].append(result)
         #print (lol)
         lol[1].append(flow1)
         lol[2].append(flow2)
     elif lol[0] != [] and id > lol[0][-1][0][0]:
-        #print ('dsdafdafdsatrue')
-        #print (id,lol[0][-1][0][0])
+
         lol[0].append(result)
         lol[1].append(flow1)
         lol[2].append(flow2)
 
-    #print (lol[0][-1][0][0])
-    #print (lol)
+
     mct(lol)
-    #flatten(lol)
-    #print (flow2)
+
     print('________________________________________________________________')
     time.sleep(0.5)
 '''
