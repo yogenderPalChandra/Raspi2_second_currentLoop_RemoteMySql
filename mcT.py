@@ -122,6 +122,46 @@ cL.execute('CREATE TABLE flowReadings(id INT AUTO_INCREMENT PRIMARY KEY, ts TIME
 
 lol=[[], [], []]
 flowRateLoad  = []
+
+def flatten(l_of_l):
+    T = l_of_l[0]
+    flattend_l = [val for sublist in T for val in sublist]
+    #print ('flattened list is =', flattend_l)
+    return flattend_l
+
+def mct(Lol):
+    mHP = Lol[2]
+    T = flatten(Lol)
+    #print ('value of Tem:',T)
+    mL = Lol[1]
+    #print (type(T))
+    #print (T)
+    #for i in T:
+    #    for j in i:
+    #      print (type(j))
+    #l_T=[list(i) for i in j for j  in T]
+    #mCT = sum ([a*b for a, b in zip(mHP, deltaT)])
+    #mCT = sum([a*(b[-1][4]-b[-1][3]) for a, b in zip(mHP, x) for x in T])
+    #for inT in T:
+    #  mCT = [a*(b[4]-b[3]) for a, b in zip(mHP, inT)]
+    #Cp = [4.253264761904763 -0.00470305*x[2] for x in T ]
+    p_LperH = [999.8473664794213 + 6.29265190e-02*x[2] - 8.42930922e-03*x[2]**2 + 6.77190849e-05*x[2]**3 \
+ - 4.40840180e-07*x[2]**4 + 1.29302849e-09*x[2]**5 for x in T  ]
+
+    #pV = [(999.8473664794213 + 6.29265190e-02*x[2] - 8.42930922e-03*x[2]**2 + 6.77190849e-05*x[2]**3 - 4.40840180e-07*x[2]**4 + 1.29302849e-09*x[2]**5)*2.7777e-07*y for x, y in zip(T, mHP)  ]
+    mF_kgPerS =[ x*2.7777e-07*y for x, y in zip(p_LperH, mHP)]
+    cP_kjPerkgK = [4.253264761904763 - 0.00470305*b[2] for b in T]
+    #mCT1 = sum([(4.253264761904763 - 0.00470305*b[2])*a*(b[2]-b[3]) for a, b in zip(mHP, T)])
+    mCT_kW = [(4.253264761904763 - 0.00470305*b[2])*a*(b[2]-b[3]) for a, b in zip(mHP, T)]
+    mCT2_kWh = sum([m*c*(dt[2]-dt[3])for m, c, dt in zip(mF_kgPerS,  cP_kjPerkgK, T)])
+    #print (T[-1], mHP,'mCpDeltaT =', mCT)
+    #print ('mCT is:',mCT)
+    #print ('mF', mF_kgPerS, mHP[-1])
+    print (' mCT_kW is:', mCT_kW)
+    print ('mCTkWh is ',mCT2_kWh)
+    return mCT_kW, mCT2_kWh
+
+
 while True:
     #c.execute("INSERT INTO flowReadings(flowHp, flowLoad) VALUES(?,?,?,?)", (chan2.voltage, chan1.voltage))
     #connection.commit()
@@ -150,7 +190,13 @@ while True:
     #c.execute("SELECT * from temSensor")
     cR.execute("SELECT * FROM temSensor ORDER BY id DESC LIMIT 1")
     result = cR.fetchall()
-    print (result)
+    #result = [_[0:] for _ in for _ in  cR.fetchall()]
+    #for i in result:
+    #  print ('type of inner list in result is:',type(i), i)
+    #  Id = result[0]
+    #  print ('ID is :',Id)
+    #print (type(result))
+    #print ('whoel list is :',result)
     #lol[0].append(result)
     id = result[0][0]
     #print (lol[0])
@@ -173,8 +219,10 @@ while True:
         lol[1].append(flow1)
         lol[2].append(flow2)
 
-    print (lol[0][-1][0][0])
+    #print (lol[0][-1][0][0])
     #print (lol)
+    mct(lol)
+    #flatten(lol)
     #print (flow2)
     print('________________________________________________________________')
     time.sleep(0.5)
