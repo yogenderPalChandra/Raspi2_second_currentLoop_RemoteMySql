@@ -2,6 +2,14 @@ import time
 import board
 import busio
 import pandas as pd
+from pandas import DataFrame
+from matplotlib import pylab
+from pylab import *
+import pylab as plt
+import numpy as np
+import matplotlib.colors as clrs
+import matplotlib
+#matplotlib.use('TkAgg')
 
 #import time
 import sys
@@ -73,14 +81,20 @@ def mct(Lol):
     mHP = Lol[2]
     T = flatten(Lol)
     mL = Lol[1]
+    #this is density as polynomial function of T
     p_LperH = [999.8473664794213 + 6.29265190e-02*x[2] - 8.42930922e-03*x[2]**2 + 6.77190849e-05*x[2]**3 \
  - 4.40840180e-07*x[2]**4 + 1.29302849e-09*x[2]**5 for x in T  ]
 
     #pV = [(999.8473664794213 + 6.29265190e-02*x[2] - 8.42930922e-03*x[2]**2 + 6.77190849e-05*x[2]**3 - 4.40840180e-07*x[2]**4 + 1.29302849e-09*x[2]**5)*2.7777e-07*y for x, y in zip(T, mHP)  ]
+    # this is mass flow  in kg/S =  density*V(flow rate in m^3/sec)= d * (1000^-3/3600)
     mF_kgPerS =[ x*2.7777e-07*y for x, y in zip(p_LperH, mHP)]
+    #this is Cp as functiono of T linear function
     cP_kjPerkgK = [4.253264761904763 - 0.00470305*b[2] for b in T]
     #mCT1 = sum([(4.253264761904763 - 0.00470305*b[2])*a*(b[2]-b[3]) for a, b in zip(mHP, T)])
-    mCT_kW = [(4.253264761904763 - 0.00470305*b[2])*a*(b[3]-b[4]) for a, b in zip(mHP, T)]
+    #mCT_kW = [(4.253264761904763 - 0.00470305*b[2])*a*(b[3]-b[4]) for a, b in zip(mHP, T)]
+    #Cp*M*deltaT
+    mCT_kW = [c*a*(b[3]-b[4]) for c, a, b in zip(cP_kjPerkgK,mF_kgPerS, T)]
+    # sum(mct* 5/3600 (time stamp))  = kWh
     mCT2_kWh = sum([m*c*(dt[3]-dt[4])*0.0013888889 for m, c, dt in zip(mF_kgPerS,  cP_kjPerkgK, T)])
     #print (T[-1], mHP,'mCpDeltaT =', mCT)
     #print ('mCT is:',mCT)
@@ -89,6 +103,72 @@ def mct(Lol):
     print ('mCTkWh is ',mCT2_kWh)
     return mCT_kW, mCT2_kWh
 
+l_id = []
+
+def idGenerator(Id, l_id):
+    if Id not in l_id:
+       l_id.append(Id) 
+    #print (l_id)
+    return l_id
+
+#df_conc= None
+def dfs(Lol):
+    mHP = Lol[2]
+    T = flatten(Lol)
+    mL = Lol[1]
+    StartTemTestingtank = [ 'id', 'dateTime', 'Tamb', 'TtopTestTankHPCir', 'TbottomTestTankHpCir', 'TtopSourceTank', \
+'TloadTankMid','TTopTestTankLoadCir', 'TloadMix', 'TbottomSourceTank', 'TbottomTestTankLoadCir']
+    l_T = ['T{}'.format(x) for x in range(0,10)]
+    L = StartTemTestingtank +l_T
+    df_mHP = DataFrame(mHP, columns=['flowHP'])
+    df_mL = DataFrame(mL, columns=['flowLoad'])
+    df_tem = DataFrame(T, columns = L)
+    df_conc = pd.concat([df_tem, df_mHP, df_mL], axis=1)
+    #print (df_mL)
+    #print (df_mHP)
+    #print (df_tem)
+    #print (df_conc)
+    return df_conc
+
+def tankStrat(df):
+    dfT = df.iloc[:, 11:-2]
+    #print (dfT)
+    return dfT
+#tankStratTem = tankStrat(df_conc)
+
+
+def create_color_step_obj(cmap_name, n):
+    """
+    Return scalarMap object with n colors in gradient from color map
+    given in cmap_name.
+    """
+    cmap = plt.get_cmap(cmap_name)
+    values = range(n)
+    cNorm  = clrs.Normalize(vmin=values[0], vmax=values[-1])
+    scalarMap = cm.ScalarMappable(norm=cNorm, cmap=cmap)
+    return scalarMap
+
+def plotObject(df,alpha =0.7):
+    cmap_name = "jet"
+    scm = create_color_step_obj(cmap_name, 10)
+    plt.ion()
+    fig, ax = plt.subplots()
+    ax.set_xlabel('Index')
+    ax.set_ylabel('Tem, C', color='r')
+    plt.legend (bbox_to_anchor=(1.4,0.89), fontsize='xx-small', loc='upper right', ncol=2)
+    for i in range (0, 10):
+        fig = ax.plot(df.index, df.iloc[:, i], label = 'Layer ' + str(10-i), color= scm.to_rgba(10-i, alpha))
+    return fig
+
+def plot(df, fig):
+    for i in range(0, 10):
+        x = df.index
+        y = df
+        Fig = [fi.set_ydata(df) for fi in fig]
+        plt.draw()
+        plt.pause(0.5)
+        plt.shwo()
+    return Fig
 
 while True:
     #c.execute("INSERT INTO flowReadings(flowHp, flowLoad) VALUES(?,?,?,?)", (chan2.voltage, chan1.voltage))
@@ -119,6 +199,8 @@ while True:
     cR.execute("SELECT * FROM temSensor ORDER BY id DESC LIMIT 1")
     result = cR.fetchall()
     id = result[0][0]
+    idGenerator(id, l_id)
+    #print ('id is :', id)
     flowRateLoad.append(flow1)
 
     if lol[0] ==[] or id < lol[0][-1][0][0] :
@@ -134,7 +216,10 @@ while True:
 
 
     mct(lol)
-
+    #print (lol)
+    #dfs(lol)
+    #tankStrat(dfs(lol))
+    plot(tankStrat(dfs(lol)), plotObject(tankStrat(dfs(lol))))
     print('________________________________________________________________')
     time.sleep(0.5)
 '''

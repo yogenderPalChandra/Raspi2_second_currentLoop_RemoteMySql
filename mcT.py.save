@@ -1,0 +1,125 @@
+import time
+import board
+import busio
+import pandas as pd
+
+#import time
+import sys
+import sqlite3
+#from time import sleep
+
+#import adafruit_ads1x15.ads1015 as ADS
+import adafruit_ads1x15.ads1115 as ADS
+from adafruit_ads1x15.analog_in import AnalogIn
+
+import MySQLdb as db
+
+HOST = "10.208.8.122"
+PORT = 3306
+USER = "yogi"
+PASSWORD = "bittoo"
+DB = "TemaccessToRemoteRp2"
+connectionL = db.connect(host="10.208.8.121",
+                     user="yogi",
+                     passwd="bittoo",
+                     db="allSensors")
+
+#c = conn.cursor()
+connectionR = db.Connection(host=HOST, port=PORT,user=USER, passwd=PASSWORD, db=DB)
+
+cR = connectionR.cursor()
+cL =connectionL.cursor()
+
+i2c = busio.I2C(board.SCL, board.SDA)
+
+# Create the ADC object using the I2C bus
+ads = ADS.ADS1115(i2c)
+
+ads.gain = 1
+
+
+cL.execute('DROP TABLE IF EXISTS flowReadings;')
+print ('table deleted')
+
+
+cL.execute('CREATE TABLE flowReadings(id INT AUTO_INCREMENT PRIMARY KEY, ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP, flowHP FLOAT, flowLoad FLOAT);')
+
+
+
+lol=[[], [], []]
+flowRateLoad  = []
+
+def flatten(l_of_l):
+    T = l_of_l[0]
+    flattend_l = [val for sublist in T for val in sublist]
+    #print ('flattened list is =', flattend_l)
+    return flattend_l
+
+def mct(Lol):
+    mHP = Lol[2]
+    T = flatten(Lol)
+    mL = Lol[1]
+    p_LperH = [999.8473664794213 + 6.29265190e-02*x[2] - 8.42930922e-03*x[2]**2 + 6.77190849e-05*x[2]**3 \
+ - 4.40840180e-07*x[2]**4 + 1.29302849e-09*x[2]**5 for x in T  ]
+
+    #pV = [(999.8473664794213 + 6.29265190e-02*x[2] - 8.42930922e-03*x[2]**2 + 6.77190849e-05*x[2]**3 - 4.40840180e-07*x[2]**4 + 1.29302849e-09*x[2]**5)*2.7777e-07*y for x, y in zip(T, mHP)  ]
+    mF_kgPerS =[ x*2.7777e-07*y for x, y in zip(p_LperH, mHP)]
+    cP_kjPerkgK = [4.253264761904763 - 0.00470305*b[2] for b in T]
+    #mCT1 = sum([(4.253264761904763 - 0.00470305*b[2])*a*(b[2]-b[3]) for a, b in zip(mHP, T)])
+    mCT_kW = [(4.253264761904763 - 0.00470305*b[2])*a*(b[3]-b[4]) for a, b in zip(mHP, T)]
+    mCT2_kWh = sum([m*c*(dt[3]-dt[4])*0.0013888889 for m, c, dt in zip(mF_kgPerS,  cP_kjPerkgK, T)])
+    #print (T[-1], mHP,'mCpDeltaT =', mCT)
+    #print ('mCT is:',mCT)
+    #print ('mF', mF_kgPerS, mHP[-1])
+    print (' mCT_kW is:', mCT_kW)
+    print ('mCTkWh is ',mCT2_kWh)
+    return mCT_kW, mCT2_kWh
+
+
+while True:
+    #c.execute("INSERT INTO flowReadings(flowHp, flowLoad) VALUES(?,?,?,?)", (chan2.voltage, chan1.voltage))
+    #connection.commit()
+    chan1 = AnalogIn(ads, ADS.P0)
+    chan2 = AnalogIn(ads, ADS.P1)
+
+    chan1Vol = chan1.voltage
+    chan1curr = chan1Vol/159.42
+
+    chan2Vol = chan2.voltage
+    chan2curr=chan2Vol/159.65
+    #flow1 = ((chan1Vol/159.42)*1000 -4)/16*1000
+    flow1 = ((chan1Vol/159.42)-0.003956)/0.0000159
+    #flow2 = ((chan2Vol/159.65)*1000 -4)/16*4000 +20
+    #flow2 = ((chan2Vol/159.65)- 0.0005468893873066417)/1.09561608e-05
+    flow2 = ((chan2Vol/159.65)- 0.003973767754877122)/5.3038815e-06
+    cL.execute("INSERT INTO flowReadings(flowHp, flowLoad) VALUES(%s, %s)", (flow2, flow1))
+    connectionL.commit()
+    #print('flow HP:',"{:>5}\t{:>5.3f}".format(chan2.value, chan2.voltage), '\n\n')
+    #print('flow load:',"{:>5}\t{:>5.3f}".format(chan1.value, chan1.voltage, '\n\n'))
+    print('flow rates load is = ',chan1Vol, chan1curr,flow1 )
+    print('flow rates HP is = ',chan2Vol, chan2curr,flow2 )
+
+    connectionR = db.Connection(host=HOST, port=PORT,user=USER, passwd=PASSWORD, db=DB)
+    cR = connectionR.cursor()
+    #c.execute("SELECT * from temSensor")
+    cR.execute("SELECT * FROM temSensor ORDER BY id DESC LIMIT 1")
+    result = cR.fetchall()
+    id = result[0][0]
+    flowRateLoad.append(flow1)
+
+    if lol[0] ==[] or id < lol[0][-1][0][0] :
+        lol[0].append(result)
+        #print (lol)
+        lol[1].append(flow1)
+        lol[2].append(flow2)
+    elif lol[0] != [] and id > lol[0][-1][0][0]:
+
+        lol[0].append(result)
+        lol[1].append(flow1)
+        lol[2].append(flow2)
+
+
+    mct(lol)
+
+    print('________________________________________________________________')
+    time.sleep(0.5)
