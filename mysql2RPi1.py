@@ -133,8 +133,13 @@ while True:
 
     chan2Vol = chan2.voltage
     chan2curr=chan2Vol/159.65
-    #flow1 = ((chan1Vol/159.42)*1000 -4)/16*1000
+    ##flow1 = ((chan1Vol/159.42)*1000 -4)/16*1000
     flow1 = ((chan1Vol/159.42)-0.003956)/0.0000159
+    #print('flow1real:', flow1Real)
+    #print ('current value of load flow rate is:', chan1curr)
+    #flow1 = -2.86877668e+03 + 2.28174035e+06*chan1curr  -7.57471109e+08*chan1curr**2 + 1.35959600e+11*chan1curr**3 + \
+    #-1.40845225e+13*chan1curr**4 + 8.62684122e+14*chan1curr**5  -3.03005116e+16*chan1curr**6 +5.46160040e+17*chan1curr**7 -3.64480635e+18**chan1curr**8
+    #flow2 = ((chan2Vol/159.65)*1000 -4)/16*4000 +20
     #flow2 = ((chan2Vol/159.65)*1000 -4)/16*4000 +20
     #flow2 = ((chan2Vol/159.65)- 0.0005468893873066417)/1.09561608e-05
     flow2 = ((chan2Vol/159.65)- 0.003973767754877122)/5.3038815e-06
