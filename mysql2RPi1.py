@@ -43,7 +43,7 @@ connectionR = db.Connection(host=HOST, port=PORT,user=USER, passwd=PASSWORD, db=
 
 cR = connectionR.cursor()
 cL =connectionL.cursor()
-
+print ('ok')
 #c.execute("SELECT * from temSensor")
 #c.execute("SELECT * FROM temSensor ORDER BY id DESC LIMIT 1")
 #result = c.fetchall()
