@@ -13,3 +13,7 @@
 *This is the block diagram of the data flow:*
 
 <img src="blockdia.png" height="500" width="700"/>
+
+
+* This is the finished product of teh Raspi2 *
+<img src="Raspi2.png" height="500" width="700"/>
