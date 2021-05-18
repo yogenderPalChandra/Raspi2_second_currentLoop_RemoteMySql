@@ -6,4 +6,10 @@
 * This RaspberryPi also remotely accesses, raspberryPi 1s data and store it in local tables. 
 * After intelligently collecting all teh data - fron RaspberryPi 1, from external current loop devices and from modbus, it logs the data remore servers via. mqtt   protocols
 * This server also performs all the necessary data cleaning/crunching/parsing using Numpy/Pandas/SciKit-learn stacks.
-* Data is fed to the mathmetical models, developed before hand, optimise the system in terms of Energy.
+* Data is fed to the mathmatical models, developed before hand, optimise the system in terms of Energy.
+* This Raspi also performs statistical optimisation/Regression models too.
+* This raspberry also makes sure the data collected is of some credibile value, it skips intelligently any data which is otherwise.
+
+** This is the block diagram of the data flow:**
+
+<img src="BlockDiagram.jpeg" height="500" width="600"/>
