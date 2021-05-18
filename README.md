@@ -15,6 +15,6 @@
 <img src="blockdia.png" height="500" width="700"/>
 
 
-*This is the finished product of teh Raspi2*
+*This is the finished product of the Raspi2*
 
 <img src="Raspi2.png" height="500" width="700"/>
