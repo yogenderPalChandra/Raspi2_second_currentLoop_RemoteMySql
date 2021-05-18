@@ -18,3 +18,8 @@
 *This is the finished product of the Raspi2*
 
 <img src="Raspi2.png" height="500" width="700"/>
+
+
+*This is how physical layer looks like, lousy though:)*
+
+<img src="IMG_20210409_110419.jpg" height="500" width="700"/>
