@@ -10,6 +10,6 @@
 * This Raspi also performs statistical optimisation/Regression models too.
 * This raspberry also makes sure the data collected is of some credibile value, it skips intelligently any data which is otherwise.
 
-This is the block diagram of the data flow:
+* This is the block diagram of the data flow:*
 
 <img src="BlockDiagram.png" height="500" width="700"/>
