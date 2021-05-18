@@ -12,4 +12,4 @@
 
 *This is the block diagram of the data flow:*
 
-<img src="BlockDiagram.png" height="500" width="700"/>
+<img src="blockdia.png" height="500" width="700"/>
